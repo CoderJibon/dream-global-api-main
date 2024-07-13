@@ -31,12 +31,11 @@ const deposit = asyncHandler(async (req, res) => {
   const { email } = req.me; // Assuming req.me contains the authenticated user's details
 
   // Get deposit data from request body
-  const { amount, transactionID } = req.body;
+  const { amount, transactionID, phone, method } = req.body;
 
   try {
     // Find user by email
     const user = await User.findOne({ email });
-
     // If user not found, return 404
     if (!user) {
       return res.status(404).json({ message: "User not found" });
@@ -46,6 +45,8 @@ const deposit = asyncHandler(async (req, res) => {
     const newDeposit = new Deposit({
       amount,
       transactionID,
+      phone,
+      method,
       user: user._id, // Reference to the User document
     });
 
@@ -59,13 +60,12 @@ const deposit = asyncHandler(async (req, res) => {
     // Optionally, you can respond with the updated user object or just a success message
     res.status(201).json({
       message: "Deposit successful . Waiting for approval",
-      user: user,
+      deposit: newDeposit,
     });
   } catch (error) {
-    console.error("Error in deposit:", error);
     res.status(500).json({ message: "Server Error" });
   }
-}); 
+});
 
 /**
  * @DESC Update Status
@@ -77,24 +77,32 @@ const deposit = asyncHandler(async (req, res) => {
 const updateStatus = asyncHandler(async (req, res) => {
   const { id } = req.params;
   const { status } = req.body;
-
   try {
     // Find deposit by ID
-    const deposit = await Deposit.findById(id);
-
-    console.log(deposit);
-
+    const deposit = await Deposit.findById(id).populate("user");
     if (!deposit) {
       return res.status(404).json({ message: "Deposit not found" });
+    }
+    // Find user by email
+    const user = await User.findById({ _id: deposit.user._id });
+
+    // If user not found, return 404
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
     }
 
     // Update status
     deposit.status = status;
     await deposit.save();
+    
+    //user amount updated
+    if (status == "success") {
+      user.myBalance += deposit.amount;
+    }
+    await user.save();
 
     res.status(200).json({ message: "Deposit status updated", deposit });
   } catch (error) {
-    console.error("Error in updateStatus:", error);
     res.status(500).json({ message: "Server Error" });
   }
 });

@@ -3,6 +3,16 @@ const mongoose = require("mongoose");
 // create a Plan Schema
 const supportSchema = new mongoose.Schema(
   {
+    name: {
+      type: String,
+      trim: true,
+      required: true,
+    },
+    email: {
+      type: String,
+      trim: true,
+      required: true,
+    },
     subject: {
       type: String,
       trim: true,
@@ -21,7 +31,6 @@ const supportSchema = new mongoose.Schema(
     photo: {
       type: String,
       trim: true,
-      required: true,
     },
     user: {
       type: mongoose.Schema.Types.ObjectId,

@@ -11,7 +11,7 @@ const CashOut = require("../models/UserCashOut.js");
 
 const getAllCashOut = asyncHandler(async (req, res) => {
   // Get all users
-  const cashOuts = await CashOut.find();
+  const cashOuts = await CashOut.find().populate("user");
   //if get all users
   if (cashOuts.length > 0) {
     return res.status(200).json({ cashOuts });
@@ -61,10 +61,9 @@ const cashOut = asyncHandler(async (req, res) => {
     // Optionally, you can respond with the updated user object or just a success message
     res.status(201).json({
       message: "CashOut successful . Waiting for approval",
-      user: user,
+      cashout: newCashOut,
     });
   } catch (error) {
-    console.error("Error in deposit:", error);
     res.status(500).json({ message: "Server Error" });
   }
 });
@@ -80,26 +79,42 @@ const updateCashOutStatus = asyncHandler(async (req, res) => {
   const { id } = req.params;
   const { status } = req.body;
 
- 
-
   try {
     // Find deposit by ID
-    const cashOut = await CashOut.findById(id);
-
-    console.log(cashOut);
+    const cashOut = await CashOut.findById(id).populate("user");
 
     if (!cashOut) {
-      return res.status(404).json({ message: "CashOut not found" });
+      return res
+        .status(404)
+        .json({ message: "CashOut not found" })
+        .populate("user");
     }
 
+    // Find user by email
+    const user = await User.findById({ _id: cashOut.user._id });
+
+    // If user not found, return 404
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    //user amount updated
+    if (status === "success") {
+      if (user.myBalance >= cashOut.amount) {
+        user.myBalance -= cashOut.amount;
+      } else {
+        return res.status(404).json({ message: "Insufficient balance." });
+      }
+    }
     // Update status
     cashOut.status = status;
     await cashOut.save();
+    await user.save();
 
     res.status(200).json({ message: "CashOut status updated", cashOut });
   } catch (error) {
-    console.error("Error in updateStatus:", error);
-    res.status(500).json({ message: "Server Error" });
+    console.log(error.message);
+    res.status(500).json({ message: "Server Error", cashOut });
   }
 });
 

@@ -28,53 +28,27 @@ const getAllSupport = asyncHandler(async (req, res) => {
  */
 
 const createSupport = asyncHandler(async (req, res) => {
-  const { email } = req.me; 
+  const { _id } = req.me;
 
   // Get support data from request body
-  const { subject, Priority, Message } = req.body;
-
+  const { name, email, subject, Priority, Message } = req.body;
   try {
     // Find user by email
-    const user = await User.findOne({ email });
+    const user = await User.findById({ _id });
 
     // If user not found, return 404
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
-    // Handle photo upload if any
-    let supportPhotoPath = null;
-
-    if (req.file) {
-      // Delete previous photo if exists in user's support document
-      if (user.support.photo) {
-        const imagePath = path.join(
-          __dirname,
-          `../public/SupportPhoto/${user.support.photo}`
-        );
-        try {
-          fs.unlinkSync(imagePath);
-          console.log(
-            `Successfully deleted previous photo ${user.support.photo}`
-          );
-        } catch (err) {
-          console.error(
-            `Error deleting previous photo ${user.support.photo}:`,
-            err
-          );
-        }
-      }
-
-      // Assign new support photo path
-      supportPhotoPath = req.file.path;
-    }
 
     // Create a new support document
     const newSupport = new Support({
+      name,
+      email,
       subject,
       Priority,
       Message,
       user: user._id,
-      photo: supportPhotoPath,
     });
 
     // Save the new support document
@@ -84,13 +58,13 @@ const createSupport = asyncHandler(async (req, res) => {
     user.support.push(newSupport._id);
 
     await user.save();
-    // Optionally, you can respond with the updated user object or just a success message
+
+    // updated user object or just a success message
     res.status(201).json({
-      message: "support successful . Waiting for approval",
-      user: user,
+      message: "support successful . Waiting for Replay",
+      support: newSupport,
     });
   } catch (error) {
-    console.error("Error in support:", error);
     res.status(500).json({ message: "Server Error" });
   }
 });
@@ -120,7 +94,6 @@ const updateSupportStatus = asyncHandler(async (req, res) => {
 
     res.status(200).json({ message: "Support status updated", support });
   } catch (error) {
-    console.error("Error in updateStatus:", error);
     res.status(500).json({ message: "Server Error" });
   }
 });

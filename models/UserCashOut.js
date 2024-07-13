@@ -21,7 +21,6 @@ const cashOutSchema = new mongoose.Schema(
     note: {
       type: String,
       trim: true,
-      required: true,
     },
     user: {
       type: mongoose.Schema.Types.ObjectId,

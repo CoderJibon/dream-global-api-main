@@ -39,7 +39,6 @@ const createPlan = asyncHandler(async (req, res) => {
     validity,
     parAdsPrice,
   } = req.body;
-
   try {
     // Find user by email
     const user = await User.findOne({ email });
@@ -62,18 +61,13 @@ const createPlan = asyncHandler(async (req, res) => {
     // Save the new plan document
     await newPlan.save();
 
-    // // Update the user document to add the new plan reference
-    // user.myPlan.push(newPlan._id);
-
-    // await user.save();
-
     // Optionally, you can respond with the updated user object or just a success message
     res.status(201).json({
       message: "Plan create successful",
-      user: user,
+      plan: newPlan,
     });
   } catch (error) {
-    console.error("Error in deposit:", error);
+    console.error(error.message);
     res.status(500).json({ message: "Server Error" });
   }
 });

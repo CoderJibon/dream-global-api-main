@@ -50,13 +50,12 @@ const createWork = asyncHandler(async (req, res) => {
     // Save the new work document
     await newWork.save();
 
-    // Optionally, you can respond with the updated user object or just a success message
+    // updated user object or just a success message
     res.status(201).json({
       message: "Work create successful",
-      user: user,
+      work: newWork,
     });
   } catch (error) {
-    console.error("Error in work:", error);
     res.status(500).json({ message: "Server Error" });
   }
 });

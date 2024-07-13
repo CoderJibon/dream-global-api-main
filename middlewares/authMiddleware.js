@@ -26,7 +26,12 @@ const authMiddleware = (req, res, next) => {
       let me = null;
 
       if (isEmail(decode.email)) {
-        me = await User.findOne({ email: decode.email }).select("-password");
+        me = await User.findOne({ email: decode.email })
+          .populate("deposit")
+          .populate("commission")
+          .populate("cashOut")
+          .populate("support")
+          .select("-password");
       }
 
       req.me = me;

@@ -139,7 +139,11 @@ const userLogin = asyncHandler(async (req, res) => {
   let loginUserData = null;
 
   if (isEmail(email)) {
-    loginUserData = await User.findOne({ email: email });
+    loginUserData = await User.findOne({ email: email })
+      .populate("deposit")
+      .populate("commission")
+      .populate("cashOut")
+      .populate("support");
 
     // user not found
     if (!loginUserData) {
@@ -393,7 +397,7 @@ const forgotPass = asyncHandler(async (req, res) => {
     )}`;
 
     // send Email
-    await AccountActivationEmail(email, {
+    await ResetPassMail(email, {
       name: authUser.name,
       link: activationLink,
     });

@@ -13,6 +13,18 @@ const DepositSchema = new mongoose.Schema(
       trim: true,
       required: true,
     },
+    phone: {
+      type: String,
+      trim: true,
+      required: true,
+    },
+    method: {
+      type: String,
+      trim: true,
+      required: true,
+      enum: ["Bikash", "Nagad", "Rocket", "Cripto"],
+      default: null,
+    },
     user: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",

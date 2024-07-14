@@ -164,7 +164,7 @@ const updateSinglePlan = asyncHandler(async (req, res) => {
 
   res
     .status(200)
-    .json({ user: updatePlan, message: "Plan updated successfully" });
+    .json({ plan: updatePlan, message: "Plan updated successfully" });
 });
 
 // export

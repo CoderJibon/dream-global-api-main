@@ -6,7 +6,7 @@ const storage = multer.diskStorage({
     cb(null, Date.now() + "_" + file.originalname);
   },
   destination: (req, file, cb) => {
-    if (file.fieldname === "user-photo") {
+    if (file.fieldname === "userPhoto") {
       cb(null, path.join(__dirname, "../public/UsersPhoto"));
     }
     if (file.fieldname === "support-photo") {
@@ -15,7 +15,7 @@ const storage = multer.diskStorage({
   },
 });
 
-const userMulter = multer({ storage }).single("user-photo");
+const userMulter = multer({ storage }).single("userPhoto");
 const supportMulter = multer({ storage }).single("support-photo");
 
 // export

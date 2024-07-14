@@ -100,8 +100,6 @@ const updateSingleUser = asyncHandler(async (req, res) => {
     id,
     {
       name,
-      email,
-      userName,
       mobile,
       address,
     },

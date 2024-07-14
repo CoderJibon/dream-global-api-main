@@ -105,7 +105,7 @@ const deleteWork = asyncHandler(async (req, res) => {
   const workId = await Work.findByIdAndDelete(id);
 
   //response
-  res.status(200).json({ user: workId, message: "Work delete successfully" });
+  res.status(200).json({ work: workId, message: "Work delete successfully" });
 });
 
 /**
@@ -139,7 +139,7 @@ const updateSingleWork = asyncHandler(async (req, res) => {
 
   res
     .status(200)
-    .json({ user: updateWork, message: "Work updated successfully" });
+    .json({ work: updateWork, message: "Work updated successfully" });
 });
 
 // export

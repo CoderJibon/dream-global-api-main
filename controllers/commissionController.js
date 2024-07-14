@@ -30,29 +30,31 @@ const getAllCommission = asyncHandler(async (req, res) => {
 const updateCommission = asyncHandler(async (req, res) => {
   const { id } = req.params;
   const { reference, commission, status } = req.body;
-
   if (!reference || !commission) {
     return res.status(400).json({ message: "All fields are required" });
   }
 
   try {
     // Find user by userName
-    const users = await User.find({ userName: reference });
+    const user = await User.findOne({ userName: reference });
 
     // Check if user exists
-    if (users.length === 0) {
+    if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
 
-    const user = users[0]; // Assuming there is only one user with the given username
-
     // Update commission document
-    const updatedCommission = await Commission.findByIdAndUpdate(id, {
-      reference,
-      commission,
-      status,
-    });
-
+    const updatedCommission = await Commission.findByIdAndUpdate(
+      id,
+      {
+        reference,
+        commission,
+        status,
+      },
+      {
+        new: true,
+      }
+    );
 
     // Update user's commission
     user.commission.push(updatedCommission._id); // Assuming `user.commission` is an array
@@ -63,9 +65,11 @@ const updateCommission = asyncHandler(async (req, res) => {
 
     await user.save(); // Save the updated user document
 
-    res.status(200).json({ message: "Commission Updated Successfully" });
+    res.status(200).json({
+      message: "Commission Updated Successfully",
+      commission: updatedCommission,
+    });
   } catch (error) {
-    console.error(error);
     res.status(500).json({ message: "Internal Server Error" });
   }
 });

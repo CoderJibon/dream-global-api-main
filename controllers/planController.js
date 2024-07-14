@@ -21,6 +21,31 @@ const getAllPlan = asyncHandler(async (req, res) => {
 });
 
 /**
+ * @DESC get single Plan
+ * @ROUTE api/v1/plan/:id
+ * @METHOD GET
+ * @ACCESS private
+ */
+
+const getSinglePlan = asyncHandler(async (req, res) => {
+  // get plan id from params
+
+  const { id } = req.params;
+
+  try {
+    // find single plan by id
+
+    const plan = await Plan.findById(id);
+
+    //  get single plan response
+
+    res.status(200).json(plan);
+  } catch (error) {
+    res.status(400).json({ message: "Plan not found" });
+  }
+});
+
+/**
  * @DESC create a new plan
  * @ROUTE api/v1/plan
  * @METHOD POST
@@ -143,4 +168,10 @@ const updateSinglePlan = asyncHandler(async (req, res) => {
 });
 
 // export
-module.exports = { getAllPlan, createPlan, deletePlan, updateSinglePlan };
+module.exports = {
+  getAllPlan,
+  createPlan,
+  deletePlan,
+  updateSinglePlan,
+  getSinglePlan,
+};

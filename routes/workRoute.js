@@ -6,6 +6,7 @@ const {
   createWork,
   deleteWork,
   updateSingleWork,
+  getSingleWork,
 } = require("../controllers/workController.js");
 
 //express init
@@ -13,6 +14,7 @@ const workRoute = express.Router();
 
 //create routes
 workRoute.route("/").get(authMiddleware, getAllWork);
+workRoute.route("/:id").get(authMiddleware, isAdmin, getSingleWork);
 workRoute.route("/").post(authMiddleware, isAdmin, createWork);
 workRoute.route("/:id").delete(authMiddleware, isAdmin, deleteWork);
 workRoute.route("/:id").put(authMiddleware, isAdmin, updateSingleWork);

@@ -21,6 +21,31 @@ const getAllWork = asyncHandler(async (req, res) => {
 });
 
 /**
+ * @DESC get single work
+ * @ROUTE api/v1/work/:id
+ * @METHOD GET
+ * @ACCESS private
+ */
+
+const getSingleWork = asyncHandler(async (req, res) => {
+  // get work id from params
+
+  const { id } = req.params;
+
+  try {
+    // find single work by id
+
+    const work = await Work.findById(id);
+
+    //  get single work response
+
+    res.status(200).json(work);
+  } catch (error) {
+    res.status(400).json({ message: "Work not found" });
+  }
+});
+
+/**
  * @DESC create a work
  * @ROUTE api/v1/work
  * @METHOD POST
@@ -118,4 +143,10 @@ const updateSingleWork = asyncHandler(async (req, res) => {
 });
 
 // export
-module.exports = { getAllWork, createWork, deleteWork, updateSingleWork };
+module.exports = {
+  getAllWork,
+  createWork,
+  deleteWork,
+  updateSingleWork,
+  getSingleWork,
+};

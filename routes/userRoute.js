@@ -17,11 +17,11 @@ const userRoute = express.Router();
 
 //create routes
 userRoute.route("/all").get(authMiddleware, isAdmin, getAllUsers);
+userRoute.route("/buyPlan").post(authMiddleware, userBuyAPlan);
+userRoute.route("/userEarning").post(authMiddleware, userEarning);
 userRoute.route("/:id").get(authMiddleware, getSingleUser);
 userRoute.route("/:id").delete(authMiddleware, isAdmin, deleteSingleUser);
 userRoute.route("/:id").put(authMiddleware, userMulter, updateSingleUser);
-userRoute.route("/buyPlan").post(authMiddleware, userBuyAPlan);
-userRoute.route("/userEarning").post(authMiddleware, userEarning);
 
 userRoute
   .route("/changeUserPassword")

@@ -181,56 +181,58 @@ const userChangePassword = asyncHandler(async (req, res) => {
 
 const userBuyAPlan = asyncHandler(async (req, res) => {
   const { email, myBalance } = req.me;
-
   const { plan } = req.body;
 
   const user = await User.findOne({ email });
 
   if (!user) {
+    res.status(404);
     throw new Error("User Not Found");
   }
 
-  jwt.verify(user.validityPlan, ACCESS_TOKEN, async (err, decoded) => {
-    if (err) {
-      // Plan has expired or verification failed
-      user.myPlan = null;
-      user.validityPlan = null;
-    }
-  });
+  // Plan validation check
+  if (user.validityPlan) {
+    jwt.verify(user.validityPlan, ACCESS_TOKEN, async (err, decoded) => {
+      if (err) {
+        // Plan has expired or verification failed
+        user.myPlan = null;
+        user.validityPlan = null;
+      }
+    });
+  }
 
   // Check if user already has a plan assigned
   if (user.myPlan) {
-    throw new Error("You Have Already Purchase a Plan");
+    res.status(400);
+    throw new Error("You Have Already Purchased a Plan");
   }
 
   const findPlan = await Plan.findById({ _id: plan });
-
   if (!findPlan) {
-    throw new Error("Plan Not Available");
+    res.status(404);
+    throw new Error("Plan Is Not Available");
   }
 
   // Check if user has enough balance
-  if (myBalance < findPlan.price) {
+  if (myBalance <= findPlan.price) {
+    res.status(404);
     throw new Error("Insufficient Balance");
   }
 
   // Update user balance
   user.myBalance = myBalance - findPlan.price;
 
-  // Assign the plan to the user
+  //Assign the plan to the user
   user.myPlan = findPlan._id;
 
   const validityDays = user.myPlan?.validity || 1;
   const expirationSeconds = validityDays * 24 * 60 * 60;
 
-  // check validity
-
+  // Check validity
   const validation = jwt.sign({ email: email }, ACCESS_TOKEN, {
     expiresIn: expirationSeconds,
   });
 
-  console.log(user.myPlan?.validity);
-  // plan validation
   user.validityPlan = validation;
 
   // Save user with updated balance and assigned plan
@@ -240,7 +242,6 @@ const userBuyAPlan = asyncHandler(async (req, res) => {
   const updateUser = await User.findById(user._id).populate("myPlan");
 
   // Add plan to user's purchase history
-
   const newPurchaseHistory = {
     name: findPlan?.name,
     amount: findPlan?.price,
@@ -249,25 +250,11 @@ const userBuyAPlan = asyncHandler(async (req, res) => {
 
   // Add purchase history to user's purchase history array
   user.PlanPurchaseHistory.push(newPurchaseHistory);
-
   await user.save();
 
-  // Add purchase history to plan's purchase history array
-  // findPlan.PlanPurchaseHistory.push(purchaseHistory._id);
-
-  // await findPlan.save();
-
-  // Add plan to user's support array
-  // user.support.push(findPlan._id);
-
-  // await user.save();
-
-  // Add user to plan's support array
-  // findPlan.support.push(user._id);
-
-  // await findPlan.save();
-
-  res.status(200).json({ message: "Plan bought successfully", updateUser });
+  res
+    .status(200)
+    .json({ message: "Plan bought successfully", plan: updateUser });
 });
 
 /**
@@ -297,17 +284,16 @@ const userEarning = asyncHandler(async (req, res) => {
   });
 
   // check if plan is not available
-
   if (!user.myPlan) {
     throw new Error("Opps! You have no plan.");
   }
-
-  //  amount update
-
+  if (!user.myPlan?.parAdsPrice) {
+    throw new Error("Server Error try to again!");
+  }
+  // amount update
   user.myBalance = myBalance + user.myPlan?.parAdsPrice;
 
   // total earning history
-
   user.totalEarning.push({
     name: name,
     amount: user.myPlan?.parAdsPrice,
@@ -316,9 +302,11 @@ const userEarning = asyncHandler(async (req, res) => {
 
   await user.save();
 
-  res
-    .status(200)
-    .json({ message: `Congratulation You Earn ${user.myPlan?.parAdsPrice}` });
+  res.status(200).json({
+    message: `Congratulation You Earn ${user.myPlan?.parAdsPrice}`,
+    earn: user.myPlan?.parAdsPrice,
+    totalEarning: user.totalEarning,
+  });
 });
 
 //   export

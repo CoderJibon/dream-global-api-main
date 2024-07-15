@@ -143,11 +143,7 @@ const updateSingleUser = asyncHandler(async (req, res) => {
 const userChangePassword = asyncHandler(async (req, res) => {
   const { email } = req.me;
 
-  console.log(req.me);
-
-  const { newPassword, confPassword } = req.body;
-
-  console.log(req.body);
+  const { oldPassword, newPassword } = req.body;
 
   const user = await User.findOne({ email });
 
@@ -155,10 +151,12 @@ const userChangePassword = asyncHandler(async (req, res) => {
     throw new Error("User Not Found");
   }
 
-  // Check if new password and confirm password match
+  // password check
+  const passwordCheck = await bcrypt.compare(oldPassword, user?.password);
 
-  if (newPassword != confPassword) {
-    throw new Error("New password and confirm password do not match");
+  // password check
+  if (!passwordCheck) {
+    return res.status(404).json({ message: "Old Password is Wrong" });
   }
 
   // Hash the new password
@@ -168,6 +166,8 @@ const userChangePassword = asyncHandler(async (req, res) => {
   user.password = hashedPassword;
 
   await user.save();
+
+  console.log(user);
 
   res.status(200).json({ message: "Password updated" });
 });

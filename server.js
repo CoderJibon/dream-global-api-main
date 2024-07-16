@@ -7,6 +7,5 @@ const mongoDbConnection = require("./config/DBConnect.js");
 
 app.listen(PORT, async () => {
   await mongoDbConnection();
-
-  `Server IS Running On Port ${PORT}`.bgCyan.black;
+  console.log(`Server IS Running On Port ${PORT}`.bgCyan.black);
 });

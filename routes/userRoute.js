@@ -9,9 +9,8 @@ const {
   userChangePassword,
   userBuyAPlan,
   userEarning,
-  updateTimestamp,
-  getTimestamp,
-  getAllTimestamp,
+  checkClickAdToken,
+  getAllClickAd,
 } = require("../controllers/userController.js");
 const { userMulter } = require("../utils/multer.js");
 
@@ -20,12 +19,11 @@ const userRoute = express.Router();
 
 //create routes
 userRoute.route("/all").get(authMiddleware, isAdmin, getAllUsers);
-userRoute.route("/getTimestamp").get(authMiddleware, getAllTimestamp);
+userRoute.route("/getAllClickAd").get(authMiddleware, getAllClickAd);
 userRoute.route("/changeUserPassword").put(authMiddleware, userChangePassword);
 userRoute.route("/buyPlan").post(authMiddleware, userBuyAPlan);
 userRoute.route("/userEarning").post(authMiddleware, userEarning);
-userRoute.route("/updateTimestamp").put(authMiddleware, updateTimestamp);
-userRoute.route("/getTimestamp/:token").get(authMiddleware, getTimestamp);
+userRoute.route("/checkClickAdToken").put(authMiddleware, checkClickAdToken);
 userRoute.route("/:id").get(authMiddleware, getSingleUser);
 userRoute.route("/:id").delete(authMiddleware, isAdmin, deleteSingleUser);
 userRoute.route("/:id").put(authMiddleware, userMulter, updateSingleUser);

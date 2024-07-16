@@ -18,4 +18,4 @@ const mongoDbConnection = async () => {
 };
 
 // export
-module.exports =  mongoDbConnection ;
+module.exports = mongoDbConnection;

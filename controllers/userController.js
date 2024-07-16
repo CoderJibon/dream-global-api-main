@@ -9,6 +9,7 @@ const { ACCESS_TOKEN } = require("../utils/secret.js");
 // const { validationCheck } = require("../middlewares/authMiddleware.js");
 const Work = require("../models/Work.js");
 const { default: mongoose } = require("mongoose");
+const ClickAd = require("../models/ClickAd.js");
 /**
  * @DESC Get all users
  * @ROUTE /api/v1/user/all
@@ -119,10 +120,7 @@ const updateSingleUser = asyncHandler(async (req, res) => {
       );
       try {
         fs.unlinkSync(imagePath);
-        //console.log(`Successfully deleted previous photo ${user.photo}`);
-      } catch (err) {
-        //console.error(`Error deleting previous photo ${user.photo}:`, err);
-      }
+      } catch (err) {}
     }
     // Update user with new photo filename
     updateUser.photo = req.file.filename;
@@ -262,189 +260,170 @@ const userBuyAPlan = asyncHandler(async (req, res) => {
  * @METHOD POST
  * @ACCESS public
  */
-
 const userEarning = asyncHandler(async (req, res) => {
-  const { email, myBalance } = req.me;
-
-  const { name } = req.body;
-
-  const user = await User.findOne({ email }).populate("myPlan");
-
-  if (!user) {
-    throw new Error("User Not Found");
-  }
-
-  jwt.verify(user.validityPlan, ACCESS_TOKEN, async (err, decoded) => {
-    if (err) {
-      // Plan has expired or verification failed
-      user.myPlan = null;
-      user.validityPlan = null;
-    }
-  });
-
-  // check if plan is not available
-  if (!user.myPlan) {
-    throw new Error("Opps! You have no plan.");
-  }
-  if (!user.myPlan?.parAdsPrice) {
-    throw new Error("Server Error try to again!");
-  }
-  // amount update
-  user.myBalance = myBalance + user.myPlan?.parAdsPrice;
-
-  // total earning history
-  user.totalEarning.push({
-    name: name,
-    amount: user.myPlan?.parAdsPrice,
-    date: new Date(),
-  });
-
-  await user.save();
-
-  res.status(200).json({
-    message: `Congratulation You Earn ${user.myPlan?.parAdsPrice}`,
-    earn: user.myPlan?.parAdsPrice,
-    totalEarning: user.totalEarning,
-  });
-});
-
-const getAllTimestamp = asyncHandler(async (req, res) => {
-  const { email } = req.me;
-  // Get all users
-  const user = await User.findOne({ email: email });
-  //if get all users
-  if (user.Timestamp24.length > 0) {
-    return res.status(200).json({ Timestamp24: user.Timestamp24 });
-  }
-  //response
-  res.status(404).json({ Timestamp24: [] });
-});
-
-/**
- * @DESC updateTimestamp
- * @ROUTE api/v1/user/updateTimestamp
- * @METHOD put
- * @ACCESS private (assuming it requires authentication based on authMiddleware)
- */
-const updateTimestamp = asyncHandler(async (req, res) => {
-  const { id } = req.body;
   try {
-    const { email } = req.me;
+    const { email, myBalance } = req.me;
+    const { name, id } = req.body;
+
+    const user = await User.findOne({ email }).populate("myPlan");
+    if (!user) {
+      return res.status(404).json({ message: "User Not Found" });
+    }
+
+    // Verify the validity of the plan
+    jwt.verify(user.validityPlan, ACCESS_TOKEN, async (err, decoded) => {
+      if (err) {
+        user.myPlan = null;
+        user.validityPlan = null;
+      }
+    });
+
+    // Check if user has a plan
+    if (!user.myPlan) {
+      return res.status(400).json({ message: "Opps! You have no plan." });
+    }
+
+    // Check if plan has ads price
+    if (!user.myPlan.parAdsPrice) {
+      return res.status(500).json({ message: "Server Error try again!" });
+    }
 
     const work = await Work.findById(id);
     if (!work) {
       return res.status(404).json({ message: "No work found" });
     }
 
-    const user = await User.findOne({ email });
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
-    //is have to
-    if (user.Timestamp24.length > 0) {
-      const findAdId = user.Timestamp24.find((ad) => ad.adID == id);
-      if (findAdId) {
-        try {
-          const havetoken = jwt.verify(findAdId.token24h, ACCESS_TOKEN);
-          if (havetoken) {
-            return res
-              .status(400)
-              .json({ message: "You have already taken in" });
-          }
-        } catch (error) {
-          if (error) {
-            user.Timestamp24 = user.Timestamp24.filter((ad) => ad.adID !== id);
-            await user.save();
-          }
-        }
-      }
-    }
-    const token24 = jwt.sign({ email }, ACCESS_TOKEN, {
-      expiresIn: "1m",
+    // Check if ad is a valid token
+    const findAds = await ClickAd.findOne({
+      adID: { $eq: id },
+      Email: { $eq: email },
     });
 
-    const time = {
-      adID: work.id,
-      addName: work.name,
-      token24h: token24,
-    };
-
-    user.Timestamp24.push(time);
-    await user.save();
-
-    res.status(200).json({ time });
-  } catch (error) {
-    if (error instanceof mongoose.Error.VersionError) {
-      // Handle version error (optional retry logic)
-      throw new Error("Server error");
+    if (findAds) {
+      // Verify the validity of the plan
+      jwt.verify(findAds.token24h, ACCESS_TOKEN, async (err, decoded) => {
+        if (err) {
+          await ClickAd.deleteOne({
+            adID: { $eq: id },
+            Email: { $eq: email },
+          });
+        }
+        if (decoded) {
+          return res
+            .status(400)
+            .json({ message: "You have already taken in!" });
+        }
+      });
     }
 
+    // Generate new expiration token
+    const token24 = jwt.sign({ email }, ACCESS_TOKEN, { expiresIn: "24h" });
+
+    // Create new ad token entry
+    const ads = await ClickAd.create({
+      adID: work.id,
+      name: work.name,
+      token24h: token24,
+      Email: email,
+    });
+
+    // Update user balance
+    user.myBalance = myBalance + user.myPlan.parAdsPrice;
+
+    // Add to total earning history
+    user.totalEarning.push({
+      name: name,
+      amount: user.myPlan.parAdsPrice,
+      date: new Date(),
+    });
+
+    // Save user data
+    await user.save();
+
+    res.status(200).json({
+      message: `Congratulations! You earned ${user.myPlan.parAdsPrice}`,
+      earn: user.myPlan.parAdsPrice,
+      totalEarning: user.totalEarning,
+      ads: ads,
+    });
+  } catch (error) {
     throw new Error("Server error");
   }
 });
 
 /**
- * @DESC getTimestamp
- * @ROUTE api/v1/getTimestamp/:token
- * @METHOD GET
- * @ACCESS private (assuming it requires authentication based on authMiddleware)
+ * @DESC get all ClickAd
+ * @ROUTE api/v1/user/getAllClickAd
+ * @METHOD get
+ * @ACCESS private
  */
-const getTimestamp = asyncHandler(async (req, res) => {
+
+const getAllClickAd = asyncHandler(async (req, res) => {
   try {
     const { email } = req.me;
-    const { token } = req.params;
-    console.log(token);
-    // Find the user
-    const user = await User.findOne({ email });
-    const getUser = await User.findOne({ email });
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
+    const findAds = await ClickAd.find({ Email: email });
+    //if get all users
+    if (findAds.length > 0) {
+      return res.status(200).json({ clickAds: findAds });
     }
-    jwt.verify(token, ACCESS_TOKEN, async (err, decoded) => {
-      if (err) {
-        if (err.name === "TokenExpiredError") {
-          // Token expired, remove it from user's Timestamp24
-          user.Timestamp24 = user.Timestamp24.filter(
-            (ad) => ad.token24h !== token
-          );
-
-          // Save the updated user document
-          await User.findByIdAndUpdate(
-            user._id,
-            {
-              Timestamp24: user.Timestamp24,
-            },
-            {
-              new: true,
-            }
-          );
-
-          // Return the updated Timestamp24
-          return res.status(200).json({ Timestamp24: getUser.Timestamp24 });
-        }
-      }
-    });
-    // Token valid, return success message or additional data if needed
-    return res.status(200).json({
-      message: "Timestamp verified",
-      Timestamp24: user.Timestamp24,
-    });
+    //response
+    res.status(200).json({ clickAds: [] });
   } catch (error) {
-    res.status(500).json({ message: "Server error", error: error.message });
+    throw new Error("Server error");
   }
 });
 
-module.exports = {
-  getAllUsers,
-  getSingleUser,
-  deleteSingleUser,
-  updateSingleUser,
-  userChangePassword,
-  userBuyAPlan,
-  userEarning,
-  updateTimestamp,
-  getTimestamp,
-};
+/**
+ * @DESC checkClickAdToken
+ * @ROUTE api/v1/user/checkClickAdToken
+ * @METHOD put
+ * @ACCESS private
+ */
+const checkClickAdToken = asyncHandler(async (req, res) => {
+  try {
+    const { email } = req.me;
+    const { data } = req.body;
+    // Find the user
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    let deleteData = null;
+    // check valid token
+    if (data.length > 0) {
+      for (const ad of data) {
+        const dataAd = await ClickAd.findOne({
+          adID: { $eq: ad.adID },
+          Email: { $eq: email },
+        });
+        if (dataAd) {
+          // Verify the validity of the plan
+          jwt.verify(dataAd.token24h, ACCESS_TOKEN, async (err, decoded) => {
+            if (err) {
+              deleteData = await ClickAd.findOneAndDelete({
+                adID: { $eq: dataAd.adID },
+                Email: { $eq: email },
+              });
+            }
+          });
+        }
+      }
+    }
+
+    // Token valid, return success message
+    if (deleteData) {
+      return res.status(200).json({
+        message: "delete data",
+        ads: deleteData,
+      });
+    }
+    return res.status(404).json({
+      message: "Not found",
+    });
+  } catch (error) {
+    throw new Error("Server error");
+  }
+});
 
 //   export
 module.exports = {
@@ -455,7 +434,6 @@ module.exports = {
   userChangePassword,
   userBuyAPlan,
   userEarning,
-  updateTimestamp,
-  getTimestamp,
-  getAllTimestamp,
+  checkClickAdToken,
+  getAllClickAd,
 };

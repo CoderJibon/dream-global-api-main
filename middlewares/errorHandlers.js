@@ -1,5 +1,5 @@
 // errorHandlers.js
-
+// Error handler middleware
 const errorHandler = (err, req, res, next) => {
   // status code
   let statusCode = res.statusCode ? res.statusCode : 500;
@@ -21,8 +21,3 @@ const errorHandler = (err, req, res, next) => {
 
 // export error handler function
 module.exports = errorHandler;
-
-
-
-
-

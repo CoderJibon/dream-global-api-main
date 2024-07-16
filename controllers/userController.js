@@ -6,8 +6,9 @@ const bcrypt = require("bcryptjs");
 const Plan = require("../models/Plan.js");
 const jwt = require("jsonwebtoken");
 const { ACCESS_TOKEN } = require("../utils/secret.js");
-const { validationCheck } = require("../middlewares/authMiddleware.js");
-
+// const { validationCheck } = require("../middlewares/authMiddleware.js");
+const Work = require("../models/Work.js");
+const { default: mongoose } = require("mongoose");
 /**
  * @DESC Get all users
  * @ROUTE /api/v1/user/all
@@ -118,9 +119,9 @@ const updateSingleUser = asyncHandler(async (req, res) => {
       );
       try {
         fs.unlinkSync(imagePath);
-        console.log(`Successfully deleted previous photo ${user.photo}`);
+        //console.log(`Successfully deleted previous photo ${user.photo}`);
       } catch (err) {
-        console.error(`Error deleting previous photo ${user.photo}:`, err);
+        //console.error(`Error deleting previous photo ${user.photo}:`, err);
       }
     }
     // Update user with new photo filename
@@ -166,8 +167,6 @@ const userChangePassword = asyncHandler(async (req, res) => {
   user.password = hashedPassword;
 
   await user.save();
-
-  console.log(user);
 
   res.status(200).json({ message: "Password updated" });
 });
@@ -309,6 +308,144 @@ const userEarning = asyncHandler(async (req, res) => {
   });
 });
 
+const getAllTimestamp = asyncHandler(async (req, res) => {
+  const { email } = req.me;
+  // Get all users
+  const user = await User.findOne({ email: email });
+  //if get all users
+  if (user.Timestamp24.length > 0) {
+    return res.status(200).json({ Timestamp24: user.Timestamp24 });
+  }
+  //response
+  res.status(404).json({ Timestamp24: [] });
+});
+
+/**
+ * @DESC updateTimestamp
+ * @ROUTE api/v1/user/updateTimestamp
+ * @METHOD put
+ * @ACCESS private (assuming it requires authentication based on authMiddleware)
+ */
+const updateTimestamp = asyncHandler(async (req, res) => {
+  const { id } = req.body;
+  try {
+    const { email } = req.me;
+
+    const work = await Work.findById(id);
+    if (!work) {
+      return res.status(404).json({ message: "No work found" });
+    }
+
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    //is have to
+    if (user.Timestamp24.length > 0) {
+      const findAdId = user.Timestamp24.find((ad) => ad.adID == id);
+      if (findAdId) {
+        try {
+          const havetoken = jwt.verify(findAdId.token24h, ACCESS_TOKEN);
+          if (havetoken) {
+            return res
+              .status(400)
+              .json({ message: "You have already taken in" });
+          }
+        } catch (error) {
+          if (error) {
+            user.Timestamp24 = user.Timestamp24.filter((ad) => ad.adID !== id);
+            await user.save();
+          }
+        }
+      }
+    }
+    const token24 = jwt.sign({ email }, ACCESS_TOKEN, {
+      expiresIn: "1m",
+    });
+
+    const time = {
+      adID: work.id,
+      addName: work.name,
+      token24h: token24,
+    };
+
+    user.Timestamp24.push(time);
+    await user.save();
+
+    res.status(200).json({ time });
+  } catch (error) {
+    if (error instanceof mongoose.Error.VersionError) {
+      // Handle version error (optional retry logic)
+      throw new Error("Server error");
+    }
+
+    throw new Error("Server error");
+  }
+});
+
+/**
+ * @DESC getTimestamp
+ * @ROUTE api/v1/getTimestamp/:token
+ * @METHOD GET
+ * @ACCESS private (assuming it requires authentication based on authMiddleware)
+ */
+const getTimestamp = asyncHandler(async (req, res) => {
+  try {
+    const { email } = req.me;
+    const { token } = req.params;
+    console.log(token);
+    // Find the user
+    const user = await User.findOne({ email });
+    const getUser = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    jwt.verify(token, ACCESS_TOKEN, async (err, decoded) => {
+      if (err) {
+        if (err.name === "TokenExpiredError") {
+          // Token expired, remove it from user's Timestamp24
+          user.Timestamp24 = user.Timestamp24.filter(
+            (ad) => ad.token24h !== token
+          );
+
+          // Save the updated user document
+          await User.findByIdAndUpdate(
+            user._id,
+            {
+              Timestamp24: user.Timestamp24,
+            },
+            {
+              new: true,
+            }
+          );
+
+          // Return the updated Timestamp24
+          return res.status(200).json({ Timestamp24: getUser.Timestamp24 });
+        }
+      }
+    });
+    // Token valid, return success message or additional data if needed
+    return res.status(200).json({
+      message: "Timestamp verified",
+      Timestamp24: user.Timestamp24,
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+});
+
+module.exports = {
+  getAllUsers,
+  getSingleUser,
+  deleteSingleUser,
+  updateSingleUser,
+  userChangePassword,
+  userBuyAPlan,
+  userEarning,
+  updateTimestamp,
+  getTimestamp,
+};
+
 //   export
 module.exports = {
   getAllUsers,
@@ -318,4 +455,7 @@ module.exports = {
   userChangePassword,
   userBuyAPlan,
   userEarning,
+  updateTimestamp,
+  getTimestamp,
+  getAllTimestamp,
 };

@@ -44,11 +44,9 @@ app.use("/api/v1/work", workRoute);
 app.use("/api/v1/commission", commissionRoute);
 
 // error handlers
-
 app.use(errorHandler);
 
 // 404 not found
-
 app.use(notFound);
 
 // export app

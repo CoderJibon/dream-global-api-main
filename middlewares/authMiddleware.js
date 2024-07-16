@@ -61,38 +61,6 @@ const isAdmin = (req, res, next) => {
     return res.status(400).json({ message: error.message });
   }
 };
-
-// buy plan validation check
-
-// const validationCheck = async (req, res, next) => {
-//   try {
-//     const user = req.me;
-
-//     if (!user) {
-//       throw new Error("You are not Authorized");
-//     }
-
-//     if (user.validityPlan) {
-//       // Verify the validity of the plan
-//       jwt.verify(user.validityPlan, ACCESS_TOKEN, async (err, decoded) => {
-//         if (err) {
-//           // Plan has expired or verification failed
-//           user.myPlan = null;
-//           user.validityPlan = null;
-//           await user.save();
-//         }
-//         // Continue to next middleware or route handler
-//         next();
-//       });
-//     } else {
-//       // If no validityPlan exists, continue to next middleware or route handler
-//       next();
-//     }
-//   } catch (error) {
-//     return res.status(400).json({ message: error.message });
-//   }
-// };
-
 // export
 module.exports = {
   authMiddleware,

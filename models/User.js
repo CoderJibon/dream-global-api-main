@@ -131,7 +131,6 @@ const UserSchema = new mongoose.Schema(
         },
       },
     ],
-    Timestamp24: [],
     refreshToken: {
       type: String,
       default: null,

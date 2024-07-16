@@ -31,6 +31,7 @@ const authMiddleware = (req, res, next) => {
           .populate("commission")
           .populate("cashOut")
           .populate("support")
+          .populate("myPlan")
           .select("-password");
       }
 

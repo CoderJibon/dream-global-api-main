@@ -344,7 +344,6 @@ const resendAccountVerification = asyncHandler(async (req, res) => {
 
     // activation link
     const activationLink = `${ADMIN_PATH}/login/${dotsToHyphens(verifyToken)}`;
-
     // send Email
     await AccountActivationEmail(email, {
       name: authUser.name,

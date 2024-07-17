@@ -143,6 +143,7 @@ const userLogin = asyncHandler(async (req, res) => {
       .populate("deposit")
       .populate("commission")
       .populate("cashOut")
+      .populate("myPlan")
       .populate("support");
 
     // user not found

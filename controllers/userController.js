@@ -211,7 +211,7 @@ const userBuyAPlan = asyncHandler(async (req, res) => {
   }
 
   // Check if user has enough balance
-  if (myBalance <= findPlan.price) {
+  if (myBalance < findPlan.price) {
     res.status(404);
     throw new Error("Insufficient Balance");
   }

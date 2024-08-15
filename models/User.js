@@ -34,6 +34,10 @@ const UserSchema = new mongoose.Schema(
       trim: true,
       default: null,
     },
+    ref: {
+      type: String,
+      trim: true,
+    },
     role: {
       type: String,
       default: "user",

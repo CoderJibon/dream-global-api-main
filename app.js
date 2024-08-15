@@ -22,7 +22,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(
   cors({
-    origin: ["http://localhost:3000", "http://localhost:4000"],
+    origin: ["https://dreamglobalinternational.org", "http://localhost:3000"],
     credentials: true,
   })
 );
@@ -42,6 +42,10 @@ app.use("/api/v1/plan", planRoute);
 app.use("/api/v1/support", supportRoute);
 app.use("/api/v1/work", workRoute);
 app.use("/api/v1/commission", commissionRoute);
+
+app.get("/", (req, res) => {
+  res.send("Dream Global International!");
+});
 
 // error handlers
 app.use(errorHandler);

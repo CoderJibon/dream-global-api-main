@@ -62,7 +62,7 @@ const userRegistration = asyncHandler(async (req, res, next) => {
     // find reference
     if (ref) {
       const referrer = await User.findOne({ userName: ref });
-      // create new reference
+      // create new reference Commission
       if (referrer) {
         const createCommission = await Commission.create({
           reference: referrer.userName,
@@ -70,6 +70,34 @@ const userRegistration = asyncHandler(async (req, res, next) => {
           commission: 0,
           status: "pending",
         });
+      }
+      // create reference Commission parent
+      if (referrer.ref) {
+        const parentRef = await User.findOne({ userName: referrer.ref });
+        // create new reference Commission
+        if (parentRef) {
+          const createCommission = await Commission.create({
+            reference: parentRef.userName,
+            newUser: `Commission via ${referrer.userName}`,
+            commission: 0,
+            status: "pending",
+          });
+
+          if (parentRef.ref) {
+            // create new reference Commission
+            const minParentRef = await User.findOne({
+              userName: parentRef.ref,
+            });
+            if (minParentRef) {
+              const createCommission = await Commission.create({
+                reference: minParentRef.userName,
+                newUser: `Commission via ${parentRef.userName}`,
+                commission: 0,
+                status: "pending",
+              });
+            }
+          }
+        }
       }
     }
 
@@ -106,6 +134,7 @@ const userRegistration = asyncHandler(async (req, res, next) => {
       email,
       password: hashPass,
       accessToken: activationCode,
+      ref: ref,
     });
 
     await newUser.save();
@@ -292,7 +321,7 @@ const accountVerificationByURL = asyncHandler(async (req, res) => {
     const tokenCheck = jwt.verify(verifyToken, ACCESS_TOKEN);
 
     if (!tokenCheck) {
-      return res.status(400).json({ message: " Invalid Active Request " });
+      return res.status(400).json({ message: "Invalid Active Request " });
     }
 
     // activate account now

@@ -18,7 +18,7 @@ const ResetPassMail = async (email, data) => {
   await transport.sendMail({
     from: `Dream Global <${EMAIL_USER}>`,
     to: email,
-    subject: "Reset Password Link",
+    subject: "Password Reset Request",
     // text: msg,
     html: `
     <!DOCTYPE html>
@@ -145,7 +145,7 @@ const ResetPassMail = async (email, data) => {
 <table border="0" cellpadding="0" cellspacing="0" className="image_block block-1" role="presentation" style="mso-table-lspace: 0pt; mso-table-rspace: 0pt;" width="100%">
 <tr>
 <td className="pad" style="width:100%;padding-right:0px;padding-left:0px;">
-<div align="center" className="alignment" style="line-height:10px"><img alt="I'm an image" src="https://static-00.iconduck.com/assets.00/messenger-icon-512x512-5pi1qivq.png" style="display: block; height: auto; border: 0; max-width: 120px; width: 100%;" title="I'm an image" width="120"/></div>
+<div align="center" className="alignment" style="line-height:10px"></div>
 </td>
 </tr>
 </table>
@@ -154,7 +154,7 @@ const ResetPassMail = async (email, data) => {
 <td className="pad">
 <div style="font-family: sans-serif">
 <div className="" style="font-size: 12px; font-family: Arial, Helvetica, sans-serif; mso-line-height-alt: 14.399999999999999px; color: #555555; line-height: 1.2;">
-<h1 style="marginBottom: 10px; font-size: 16px; text-align: center; mso-line-height-alt: 19.2px;"> Hello Dear User ${data.name}</h1>
+<h1 style="marginBottom: 10px; font-size: 16px; text-align: center; mso-line-height-alt: 19.2px;"> Hello Dear ${data.name}</h1>
 <p style="margin: 0; font-size: 16px; text-align: center; mso-line-height-alt: 19.2px;"><em><strong>Reset Your Password </strong></em></p>
 </div>
 </div>
@@ -166,7 +166,7 @@ const ResetPassMail = async (email, data) => {
 <td className="pad">
 <div style="font-family: sans-serif">
 <div className="" style="font-size: 12px; font-family: Arial, Helvetica, sans-serif; mso-line-height-alt: 14.399999999999999px; color: #555555; line-height: 1.2;">
-<p style="margin: 0; font-size: 14px; text-align: center; mso-line-height-alt: 16.8px;">Far far away, behind the word mountains, far from the countries Vokalia and Consonantia, there live the blind texts. Separated they live in Bookmarksgrove right at the coast of the Semantics, a large language ocean.</p>
+<p style="margin: 0; font-size: 14px; text-align: center; mso-line-height-alt: 16.8px;">We received a request to reset your password for your ream Global International account. If you made this request, please click on the Button below to reset your password:</p>
 </div>
 </div>
 </td>
